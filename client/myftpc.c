@@ -15,12 +15,32 @@ struct myftpchead ftpched = {
 	.mysockd = -1
 };
 
+struct eventtable etab[] = {
+	{EV_INIT_CMPL, "EV_INIT_CMPL", ""},
+	{EV_STDIN, "EV_STDIN", ""},
+	{EV_STDIN_INVALID, "EV_STDIN_INVALID", "Invalid input."},
+	{EV_RECV_PACKET, "EV_RECV_PACKET", "Packet recived from server."},
+	{EV_TIMEOUT, "EV_TIMEOUT", ""},
+	{EV_EXIT, "EV_EXIT", "Exiting client."},
+	{EV_INVALID, "EV_INVALID", "Invalid Event."},
+	{EV_SENTINEL, "EV_SENTINEL", "Sentinel."}
+};
+
+struct eventtable stab[] = {
+	{ST_INIT, "ST_INIT", ""},
+	{ST_ESTABLISHED, "ST_ESTABLISHED", ""},
+	{ST_WAIT_PACKET, "ST_WAIT_PACKET", ""},
+	{ST_WAIT_PACKET_RE, "ST_WAIT_PACKET_RE", ""},
+	{ST_EXIT, "ST_EXIT", ""},
+	{ST_SENTINEL, "ST_SENTINEL", "Sentinel"}
+};
+
 struct proctable ptab[] = {
 	{ST_INIT, EV_INIT_CMPL, tcpc_quick_establish, ST_ESTABLISHED},
 	{ST_ESTABLISHED, EV_STDIN, tcpc_send, ST_WAIT_PACKET},
 	{ST_ESTABLISHED, EV_STDIN_INVALID, dummy, ST_ESTABLISHED},
 	{ST_WAIT_PACKET, EV_TIMEOUT, tcpc_send, ST_WAIT_PACKET_RE},
-	{ST_WAIT_PACKET, EV_RECV_PACKET, dummy, ST_ESTABLISHED},		// TODO: remove dummy
+	{ST_WAIT_PACKET, EV_RECV_PACKET, dummy, ST_ESTABLISHED},		// TODO: remove dummy and show pack
 	{ST_WAIT_PACKET_RE, EV_TIMEOUT, tcpc_close, ST_EXIT},
 	{ST_SENTINEL, EV_SENTINEL, NULL, ST_SENTINEL}
 };
@@ -48,14 +68,14 @@ int main(int argc, char const* argv[])
 	while(1) {
 		if ((event = wait_event(hpr)) == EV_INVALID)
 			report_error_and_exit(ERROR_EVENT, "main");
-//		print_event(event, etab);
+		print_event(event, etab);
 		
 		for (ptptr = ptab; ptptr -> status; ptptr++) {
 				if (ptptr -> status == status && ptptr -> event == event) {
 					(*ptptr -> func)(hpr);
 					status = ptptr->nextstatus;
 					fprintf(stderr, "moving to status: %2d\n\n", status);
-//					print_status(status, stab);
+					print_status(status, stab);
 					break;
 				}
 		}
