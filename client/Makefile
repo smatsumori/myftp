@@ -1,7 +1,7 @@
 CC = gcc
-TARGET = myftp.out
-SRCS = myftp.c
-OBJS = myftp.o
+TARGET = myftpc.out
+SRCS = myftpc.c
+OBJS = myftpc.o
 DEPS =
 
 LDFLAGS = 
