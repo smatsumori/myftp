@@ -18,7 +18,7 @@ struct myftpchead {
 struct proctable {
 	int status;
 	int event;	/* input */
-	void (*func)(struct dhcphead *hpr);
+	void (*func)(struct myftpchead *hpr);
 	int nextstatus;
 };
 
