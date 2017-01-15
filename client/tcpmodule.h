@@ -79,6 +79,7 @@ tcpc_send(struct myftpchead *hpr)
 {
 	int dsize;
 	/* send packet */
+	// TODO: handling stream packet (take care of data size)
 	fprintf(stderr, "Sending packet...");
 
 	if ((dsize = sendto(hpr->mysockd, &hpr->packet_to_send, sizeof hpr->packet_to_send, 0,
@@ -92,11 +93,11 @@ tcpc_send(struct myftpchead *hpr)
 void
 tcpc_recv(struct myftpchead *hpr)
 {
+	// TODO; implement
+	/* common for server and client */
 	fprintf(stderr, "Recieving packet...");
 	return;
 }
-#endif // __HEADER_TCPC_MODULE__
-
 
 void
 tcpc_quick_establish(struct myftpchead *hpr)
@@ -106,3 +107,4 @@ tcpc_quick_establish(struct myftpchead *hpr)
 	tcpc_connreq(hpr);
 	return;
 }
+#endif // __HEADER_TCPC_MODULE__
