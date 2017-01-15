@@ -52,6 +52,8 @@ struct command_table {	// TODO: ADD command here
 	{NULL, NULL}
 };
 
+
+/*** MAIN ***/
 int main(int argc, char const* argv[])
 {
 	#ifdef DEBUG
@@ -66,8 +68,8 @@ int main(int argc, char const* argv[])
 	int event = EV_INIT_CMPL;
 
 	while(1) {
-		if ((event = wait_event(hpr)) == EV_INVALID)
-			report_error_and_exit(ERROR_EVENT, "main");
+		if ((event = wait_event(hpr, status)) == EV_INVALID)
+			report_error_and_exit(ERROR_EVENT, "main:event");
 		print_event(event, etab);
 		
 		for (ptptr = ptab; ptptr -> status; ptptr++) {
