@@ -1,6 +1,10 @@
 #include "./myftpc.h"
 #include "./tcpmodule.h"
 
+/*** PROTOTYPE ***/
+int wait_event(struct myftpchead *hpr, int status);
+
+
 enum event_Flags {
 	EV_SENTINEL, EV_INIT_CMPL, EV_STDIN, EV_STDIN_INVALID, EV_RECV_PACKET,
 	EV_TIMEOUT, EV_EXIT, EV_INVALID
