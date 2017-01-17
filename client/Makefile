@@ -2,7 +2,7 @@ CC = gcc
 TARGET = myftpc.out
 SRCS = myftpc.c
 OBJS = myftpc.o
-DEPS =
+DEPS = tcpmodule.h myftpc.h
 
 LDFLAGS = 
 CFLAGS = -g -O
