@@ -96,6 +96,7 @@ int main(int argc, char const* argv[])
 int
 wait_event(struct myftpchead *hpr, int status)
 {
+	char cmd[CMD_LENGTH];	
 	switch (status) {
 		case ST_INIT:
 			return EV_INIT_CMPL;
@@ -105,9 +106,13 @@ wait_event(struct myftpchead *hpr, int status)
 			return EV_RECV_PACKET;	// TODO: implement
 
 		case ST_ESTABLISHED:		// TODO: implement
-			return EV_STDIN;
-			return EV_STDIN_INVALID;
-	
+			scanf("%s", cmd);		// TODO: error handling
+			switch (setcmd(hpr, cmd)) {
+				case 0:		// VALID
+					return EV_STDIN;
+				case -1:		// INVALID
+					return EV_STDIN_INVALID;
+			}
 	}
 	return EV_INVALID;
 }
