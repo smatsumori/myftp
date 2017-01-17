@@ -5,7 +5,8 @@
 #include "../utils/packet.h"
 
 struct myftpdhead {
-	int mysockd;		/* socket descriptor for this client */
+	// TODO: implement
+	int mysockd;		/* socket descriptor for this server */
 	int argc;
 	int cmd;
 	char argv[CMD_LENGTH][MAX_CMD];
