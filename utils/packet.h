@@ -20,6 +20,8 @@
 #define CODE_FILE_ERR_PERMISSION_DENIED
 #define CODE_UNKWN_ERR
 
+/*** INCLUDES ***/
+#include <stdint.h>
 
 /*** FTPPACKET ***/
 struct myftp_packh {
