@@ -7,7 +7,6 @@
 #include <netinet/in.h>
 #include <string.h>
 
-#define MAX_CMD 2
 #define CMD_LENGTH 20
 
 /*** PROTOTYPES ***/
@@ -17,8 +16,10 @@ int setcmd(struct myftpchead *hpr, char cmd[CMD_LENGTH]);
 struct myftpchead {
 	int mysockd;		/* socket descriptor for this client */
 	int argc;
-	int cmd;
+	uint8_t type;
+	uint8_t code;
 	char argv[CMD_LENGTH][MAX_CMD];
+	char **data_to_send;		
 	struct sockaddr_in servsockaddr;
 	struct myftp_packh packet_to_send;
 	struct myftp_packh packet_recieved;
@@ -35,6 +36,7 @@ struct proctable {
 int 
 setcmd(struct myftpchead *hpr, char cmd[CMD_LENGTH])
 {
+	/* TODO: set a command to myftpchead cmd */
 	hpr->argc = 0;
 	/* returns 0 if the command is valid, othewise -1 */
 	const char *delim = " \t\n";

@@ -16,7 +16,7 @@ enum status_Flags {
 };
 
 struct myftpchead ftpched = {
-	.mysockd = -1
+	.mysockd = -1, .data_to_send = NULL
 };
 
 struct eventtable etab[] = {

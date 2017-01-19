@@ -84,16 +84,33 @@ tcpc_close(struct myftpchead *hpr) {
 void
 tcpc_send(struct myftpchead *hpr)
 {
-	int dsize;
+	int hsize, dsize;
 	/* send packet */
-	// TODO: handling stream packet (take care of data size)
 	fprintf(stderr, "Sending packet...");
 
-	if ((dsize = sendto(hpr->mysockd, &hpr->packet_to_send, sizeof hpr->packet_to_send, 0,
+	/*  set header information */
+	hpr->packet_to_send.type  = hpr->type;
+	hpr->packet_to_send.code = hpr->code;
+	if (hpr->data_to_send == NULL) {	// no data to send
+		hpr->packet_to_send.length = 0;
+	} else {
+		hpr->packet_to_send.length = sizeof *(hpr->data_to_send);
+	}
+
+	if ((hsize = sendto(hpr->mysockd, &hpr->packet_to_send, sizeof hpr->packet_to_send, 0,
 					(struct sockaddr *)&(hpr->servsockaddr), sizeof (hpr->servsockaddr))) < 0) {
 		report_error_and_exit(ERR_SENDTO, "sendto");
 	}
+	if (hpr->data_to_send != NULL) {		/* if there is a data to send */
+		if ((dsize = sendto(hpr->mysockd, hpr->data_to_send, sizeof *hpr->data_to_send, 0,	//TODO: check if this works
+					(struct sockaddr *)&(hpr->servsockaddr), sizeof (hpr->servsockaddr))) < 0) {
+			report_error_and_exit(ERR_SENDTO, "sendto");
+		}
+	}
+	/* send data */
 	fprintf(stderr, "Complete\n");
+	fprintf(stderr, "Data size: (HEAD)%d + (DATA)%d\n", hsize, dsize);
+	hpr->data_to_send = NULL;
 	return;
 }
 
