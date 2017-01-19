@@ -11,6 +11,8 @@
 
 /*** PROTOTYPES ***/
 struct myftpchead;
+struct typetable;
+struct proctable;
 int setcmd(struct myftpchead *hpr, char cmd[CMD_LENGTH]);
 
 struct myftpchead {
@@ -32,13 +34,27 @@ struct proctable {
 	int nextstatus;
 };
 
+struct typetable {
+	char cmd[CMD_LENGTH];
+	uint8_t type;
+} static ttab[] = {
+	{"quit", FTP_QUIT},
+	{"pwd", FTP_PWD},
+	{"cd", FTP_CWD},
+	{"dir", FTP_LIST},
+	{"get", FTP_RETR},
+	{"put", FTP_STOR},
+	{"__SENTINEL__", 0}
+};
+
 /*** FUNCTIONS ***/
 int 
 setcmd(struct myftpchead *hpr, char cmd[CMD_LENGTH])
 {
 	/* TODO: set a command to myftpchead cmd */
 	hpr->argc = 0;
-	/* returns 0 if the command is valid, othewise -1 */
+	/* returns 0, 1 if the command is valid, othewise -1 */
+	/* 0 is ftpcmd, 1 is client cmd */
 	const char *delim = " \t\n";
 	char *ptr;
 	if ((ptr = strtok(cmd, delim)) == NULL) {
@@ -48,14 +64,32 @@ setcmd(struct myftpchead *hpr, char cmd[CMD_LENGTH])
 	  /* TODO: extend MAX_CMD if you want to get more than 2 cmds */
 		(hpr->argc)++;	// argc = 1
 		strcpy(hpr->argv[(hpr->argc) - 1], ptr);
-		fprintf(stderr, "CMD: %s\n", ptr);
+		fprintf(stderr, "CMD: %s", ptr);
 		while ((ptr = strtok(NULL, delim)) != NULL) {
-			fprintf(stderr, "CMD: %s\n", ptr);
+			fprintf(stderr, " %s", ptr);
 			(hpr->argc)++;
 			strcpy(hpr->argv[(hpr->argc) - 1], ptr);
 		}
-		return 0;
+		fprintf(stderr, "\n");
+		
+		/* set a ftp command */
+		for (struct typetable *ptr = &ttab; ; ptr++) {
+			if (strcmp(ptr->cmd, "__SENTINEL__") == 0) {
+				return 1;		// client command
+			} else if (strcmp(hpr->argv[0], ptr->cmd) == 0) {
+				hpr->type = ptr->type;
+				return 0;		// ftp command
+			}
+		}
 	}
 	return -1;
+}
+
+void
+exec_cmd(struct myftpchead *hpr)
+{	
+	// TODO: implement
+	fprintf(stderr, "Execute here\n");
+	return;
 }
 #endif	// __HEADER_MYFTPC__

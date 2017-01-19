@@ -84,7 +84,8 @@ tcpc_close(struct myftpchead *hpr) {
 void
 tcpc_send(struct myftpchead *hpr)
 {
-	int hsize, dsize;
+	int hsize = 0;
+	int dsize = 0;
 	/* send packet */
 	fprintf(stderr, "Sending packet...");
 

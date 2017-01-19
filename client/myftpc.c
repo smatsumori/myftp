@@ -7,7 +7,7 @@ int wait_event(struct myftpchead *hpr, int status);
 
 enum event_Flags {
 	EV_SENTINEL, EV_INIT_CMPL, EV_STDIN, EV_STDIN_INVALID, EV_RECV_PACKET,
-	EV_TIMEOUT, EV_EXIT, EV_INVALID
+	EV_TIMEOUT, EV_EXIT, EV_INVALID, EV_STDIN_CLICMD,
 };
 
 enum status_Flags {
@@ -27,6 +27,7 @@ struct eventtable etab[] = {
 	{EV_TIMEOUT, "EV_TIMEOUT", ""},
 	{EV_EXIT, "EV_EXIT", "Exiting client."},
 	{EV_INVALID, "EV_INVALID", "Invalid Event."},
+	{EV_STDIN_CLICMD, "EV_STDIN_CLICMD", "Client command"},
 	{EV_SENTINEL, "EV_SENTINEL", "Sentinel."}
 };
 
@@ -43,6 +44,7 @@ struct proctable ptab[] = {
 	{ST_INIT, EV_INIT_CMPL, tcpc_quick_establish, ST_ESTABLISHED},
 	{ST_ESTABLISHED, EV_STDIN, tcpc_send, ST_WAIT_PACKET},
 	{ST_ESTABLISHED, EV_STDIN_INVALID, dummy, ST_ESTABLISHED},
+	{ST_ESTABLISHED, EV_STDIN_CLICMD, exec_cmd, ST_ESTABLISHED},
 	{ST_WAIT_PACKET, EV_TIMEOUT, tcpc_send, ST_WAIT_PACKET_RE},
 	{ST_WAIT_PACKET, EV_RECV_PACKET, dummy, ST_ESTABLISHED},		// TODO: remove dummy and show pack
 	{ST_WAIT_PACKET_RE, EV_TIMEOUT, tcpc_close, ST_EXIT},
@@ -109,8 +111,10 @@ wait_event(struct myftpchead *hpr, int status)
 			fprintf(stderr, "$ftp ");
 			fgets(cmd, CMD_LENGTH, stdin);		//TODO: error handling
 			switch (setcmd(hpr, cmd)) {
-				case 0:		// VALID
+				case 0:		// VALID (ftp command)
 					return EV_STDIN;
+				case 1:		// VALID (client command)
+					return EV_STDIN_CLICMD;
 				case -1:		// INVALID
 					return EV_STDIN_INVALID;
 			}
