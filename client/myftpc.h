@@ -37,7 +37,7 @@ setcmd(struct myftpchead *hpr, char cmd[CMD_LENGTH])
 {
 	hpr->argc = 0;
 	/* returns 0 if the command is valid, othewise -1 */
-	const char *delim = " \t";
+	const char *delim = " \t\n";
 	char *ptr;
 	if ((ptr = strtok(cmd, delim)) == NULL) {
 		fprintf(stderr, "No input\n");
@@ -47,7 +47,8 @@ setcmd(struct myftpchead *hpr, char cmd[CMD_LENGTH])
 		(hpr->argc)++;	// argc = 1
 		strcpy(hpr->argv[(hpr->argc) - 1], ptr);
 		fprintf(stderr, "CMD: %s\n", ptr);
-		while ((ptr = strtok(cmd, NULL)) != NULL) {
+		while ((ptr = strtok(NULL, delim)) != NULL) {
+			fprintf(stderr, "CMD: %s\n", ptr);
 			(hpr->argc)++;
 			strcpy(hpr->argv[(hpr->argc) - 1], ptr);
 		}

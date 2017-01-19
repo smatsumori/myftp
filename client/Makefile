@@ -6,7 +6,7 @@ DEPS = tcpmodule.h myftpc.h
 
 LDFLAGS = 
 CFLAGS = -g -O
-DFLAGS = -D DEBUG
+DFLAGS = -D DEBUG -D ANYADDR
 
 RM = rm -f
 

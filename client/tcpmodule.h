@@ -44,8 +44,13 @@ tcpc_init(struct myftpchead *hpr) {
 	bzero(&(hpr->servsockaddr), sizeof hpr->servsockaddr);
 	hpr->servsockaddr.sin_family = AF_INET;
 	hpr->servsockaddr.sin_port = htons(FTP_SERV_PORT);
+	#ifdef DEBUG
 	if (inet_aton(FTP_SERV_ADDR, &(hpr->servsockaddr.sin_addr)) == 0)
 		report_error_and_exit(ERR_ATON, "tcpc_init");
+	#endif
+	#ifdef ANYADDR
+	hpr->servsockaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	#endif
 	fprintf(stderr, "Compleate!\n");
 	return;
 }

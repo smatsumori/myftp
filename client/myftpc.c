@@ -106,7 +106,8 @@ wait_event(struct myftpchead *hpr, int status)
 			return EV_RECV_PACKET;	// TODO: implement
 
 		case ST_ESTABLISHED:		// TODO: implement
-			scanf("%s", cmd);		// TODO: error handling
+			fprintf(stderr, "$ftp ");
+			fgets(cmd, CMD_LENGTH, stdin);		//TODO: error handling
 			switch (setcmd(hpr, cmd)) {
 				case 0:		// VALID
 					return EV_STDIN;
