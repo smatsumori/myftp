@@ -4,10 +4,10 @@
 /*** PROTOTYPE ***/
 int wait_event(struct myftpchead *hpr, int status);
 
-
+// TODO: remove EV_STDIN
 enum event_Flags {
 	EV_SENTINEL, EV_INIT_CMPL, EV_STDIN, EV_STDIN_INVALID, EV_RECV_PACKET,
-	EV_FTPCMD_PWD, EV_FTPCMD_CD, EV_FTPCMD_DIR,		// 2-steps-commands	TODO:
+	EV_FTPCMD_QUIT, EV_FTPCMD_PWD, EV_FTPCMD_CD, EV_FTPCMD_DIR,		// 2-steps-commands	TODO:
 	EV_FTPCMD__GET, EV_FTPCMD__PUT,															// 3-steps-commands TODO:
 	EV_RECV_CMDERR, EV_RECV_FILEERR, EV_RECV_UNKWNERR,
 	EV_TIMEOUT, EV_EXIT, EV_INVALID, EV_STDIN_CLICMD,
@@ -36,6 +36,12 @@ struct eventtable etab[] = {
 	{EV_RECV_CMDERR, "EV_RECV_CMDERR", "Command Error."},
 	{EV_RECV_FILEERR, "EV_RECV_FILEERR", "File Error."},
 	{EV_RECV_UNKWNERR, "EV_RECV_UNKWNERR", "Unknown Error."},
+	{EV_FTPCMD_QUIT, "EV_FTPCMD_QUIT", "Close connection."},
+	{EV_FTPCMD_PWD, "EV_FTPCMD_PWD", "Ftpcmd pwd"},
+	{EV_FTPCMD_DIR, "EV_FTPCMD_DIR", "Ftpcmd dir"},
+	{EV_FTPCMD_CD, "EV_FTPCMD_CD", "Ftpcmd cd"},
+	{EV_FTPCMD__GET, "EV_FTPCMD__GET", "Ftpcmd get"},
+	{EV_FTPCMD__PUT, "EV_FTPCMD__PUT", "Ftpcmd put"},
 	{EV_SENTINEL, "EV_SENTINEL", "Sentinel."}
 };
 
@@ -133,17 +139,32 @@ wait_event(struct myftpchead *hpr, int status)
 		case ST_WAIT_PACKET:
 			return EV_RECV_PACKET;	// TODO: implement
 
-		case ST_ESTABLISHED:		// TODO: implement
+		case ST_ESTABLISHED:
 			fprintf(stderr, "$ftp ");
 			fgets(cmd, CMD_LENGTH, stdin);		//TODO: error handling
 			switch (setcmd(hpr, cmd)) {
 				case 0:		// VALID (ftp command)
-					return EV_STDIN;	// TODO:IMPLEMENT
+					switch (hpr->type) {
+						case FTP_QUIT:
+							return EV_FTPCMD_QUIT;
+						case FTP_PWD:
+							return EV_FTPCMD_PWD;
+						case FTP_CWD:
+							return EV_FTPCMD_CD;
+						case FTP_LIST:
+							return EV_FTPCMD_DIR;
+						case FTP_RETR:
+							return  EV_FTPCMD__GET;
+						case FTP_STOR:
+							return EV_FTPCMD__PUT;
+					}
+					return EV_STDIN;
 				case 1:		// VALID (client command)
 					return EV_STDIN_CLICMD;
 				case -1:		// INVALID
 					return EV_STDIN_INVALID;
 			}
+		  break;		// end of ST_ESTABLISHED
 	}
 	return EV_INVALID;
 }

@@ -96,6 +96,8 @@ setcmd(struct myftpchead *hpr, char cmd[CMD_LENGTH])
 void
 exec_cmd(struct myftpchead *hpr)
 {	
+	/* execute client command */
+	/* no need to send msg in this cmd */
 	char *homepath = getenv("HOME");
 	char cmd[CMD_LENGTH];
 	if (strcmp(hpr->argv[0], "exit") == 0) {
