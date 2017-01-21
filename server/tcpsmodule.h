@@ -14,8 +14,6 @@
 #define ERR_CONNECT 10
 #define ERR_ATON 11
 #define ERR_CLOSE 12
-#define FTP_SERV_PORT 50021
-#define FTP_SERV_ADDR "131.113.108.53"
 #define ERR_SOCKET 13
 #define ERR_BIND 14
 #define ERR_ACCEPT 15

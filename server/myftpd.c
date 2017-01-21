@@ -1,5 +1,6 @@
 #include "./myftpd.h"
 #include "./tcpsmodule.h"
+#include "./client.h"
 
 /*** FSM ***/
 enum globalevent_Flags {
@@ -9,7 +10,7 @@ enum globalevent_Flags {
 
 /*** PROTOTYPES ***/
 int global_event_dispatcher(struct myftpdhead *hpr);
-int global_client_handler(struct myftpdhead *hpr, event);
+int global_client_handler(struct myftpdhead *hpr, int event);
 struct myftpdhead myftpdh;
 
 /*** SIGNAL HANDLER ***/
@@ -44,7 +45,7 @@ global_client_handler(struct myftpdhead *hpr, int event)
 					break;
 				case 0:		/* child */
 					// TODO: execute cmd
-					exit(0);
+					client_handler(hpr);
 					break;
 				default:		/* parent */
 					if (waitpid(pid, &stat, 0) < 0) 
@@ -58,10 +59,12 @@ global_client_handler(struct myftpdhead *hpr, int event)
 /*** MAIN ***/
 int main(int argc, char const* argv[])
 {
+	int event;
 	struct myftpdhead *hpr = &myftpdh;
 	tcpd_init(hpr);
 	while (1) {
-		global_event_dispatcher(hpr);
+		event = global_event_dispatcher(hpr);
+		global_client_handler(hpr, event);
 	}
 	return 0;
 }
