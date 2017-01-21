@@ -15,6 +15,8 @@
 /*** DEFINES ***/
 #define MAX_NAME 25
 #define MAX_DESCRIPTION 100
+#define CMD_LENGTH 20
+#define MAX_CMD 10
 
 /*** ERRORS ***/
 enum error_Flags {

@@ -2,13 +2,13 @@
 #define __MYFTP_PACKET__
 
 /*** DEFINES ***/
-#define DATASIZE 1024
+#define FTP_DATASIZE 1024
 #define FTP_QUIT 0x01
-#define FTP_PDW 0x02
+#define FTP_PWD 0x02
 #define FTP_CWD 0x03
 #define FTP_LIST 0x04
 #define FTP_RETR 0x05
-#define FTP_STOP 0x06
+#define FTP_STOR 0x06
 
 #define CODE_OK
 #define CODE_OK_DATA_FOLLOW_S
