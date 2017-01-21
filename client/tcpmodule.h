@@ -69,17 +69,6 @@ tcpc_connreq(struct myftpchead *hpr) {
 	return;
 }
 
-void 
-tcpc_close(struct myftpchead *hpr) {
-	/* close connection with server */
-	fprintf(stderr, "Closing TCP connection with server: %s ... ", inet_ntoa(hpr->servsockaddr.sin_addr));
-
-	if(close(hpr->mysockd) < 0)
-		report_error_and_exit(ERR_CLOSE, "tcpc_close");
-
-	fprintf(stderr, "Closed!\n");
-	return;
-}
 
 void
 tcpc_send(struct myftpchead *hpr)
@@ -91,11 +80,12 @@ tcpc_send(struct myftpchead *hpr)
 
 	/*  set header information */
 	hpr->packet_to_send.type  = hpr->type;
-	hpr->packet_to_send.code = hpr->code;
 	if (hpr->data_to_send == NULL) {	// no data to send
 		hpr->packet_to_send.length = 0;
-	} else {
+		hpr->packet_to_send.code = 0x00;
+	} else {		// data to send
 		hpr->packet_to_send.length = sizeof *(hpr->data_to_send);
+		hpr->packet_to_send.code = 0x01;	// data follows after this packet
 	}
 
 	if ((hsize = sendto(hpr->mysockd, &hpr->packet_to_send, sizeof hpr->packet_to_send, 0,
@@ -103,6 +93,7 @@ tcpc_send(struct myftpchead *hpr)
 		report_error_and_exit(ERR_SENDTO, "sendto");
 	}
 	if (hpr->data_to_send != NULL) {		/* if there is a data to send */
+		/* sending data at onece */
 		if ((dsize = sendto(hpr->mysockd, hpr->data_to_send, sizeof *hpr->data_to_send, 0,	//TODO: check if this works
 					(struct sockaddr *)&(hpr->servsockaddr), sizeof (hpr->servsockaddr))) < 0) {
 			report_error_and_exit(ERR_SENDTO, "sendto");
@@ -123,6 +114,19 @@ tcpc_recv(struct myftpchead *hpr)
 	fprintf(stderr, "Recieving packet...");
 	return;
 }
+
+void 
+tcpc_close(struct myftpchead *hpr) {
+	/* close connection with server */
+	fprintf(stderr, "Closing TCP connection with server: %s ... ", inet_ntoa(hpr->servsockaddr.sin_addr));
+
+	if(close(hpr->mysockd) < 0)
+		report_error_and_exit(ERR_CLOSE, "tcpc_close");
+
+	fprintf(stderr, "Closed!\n");
+	return;
+}
+
 
 void
 tcpc_quick_establish(struct myftpchead *hpr)

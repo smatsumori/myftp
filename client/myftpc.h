@@ -81,11 +81,10 @@ setcmd(struct myftpchead *hpr, char cmd[CMD_LENGTH])
 		
 		/* set a ftp command */
 		for (struct typetable *ptr = &ttab; ; ptr++) {
-			if (strcmp(ptr->cmd, "__SENTINEL__") == 0) {
-				return 1;		// client command
-			} else if (strcmp(hpr->argv[0], ptr->cmd) == 0) {
-				// TODO: set code here
-				hpr->type = ptr->type;
+			if (strcmp(ptr->cmd, "__SENTINEL__") == 0) {		// if client command
+				return 1;
+			} else if (strcmp(hpr->argv[0], ptr->cmd) == 0) {		// if ftp command
+				hpr->type = ptr->type;		// set type
 				return 0;		// ftp command
 			}
 		}
