@@ -9,7 +9,7 @@ enum globalevent_Flags {
 
 /*** PROTOTYPES ***/
 int global_event_dispatcher(struct myftpdhead *hpr);
-int global_client_selector(struct myftpdhead *hpr);
+int global_client_handler(struct myftpdhead *hpr, event);
 struct myftpdhead myftpdh;
 
 /*** SIGNAL HANDLER ***/
@@ -26,14 +26,32 @@ global_event_dispatcher(struct myftpdhead *hpr)
 	tcpd_listen(hpr);
 	switch (tcp_accept(hpr)) {
 		case 0:
-		return GLOBAL_EV_RECVCONNREQ;
+			return GLOBAL_EV_RECVCONNREQ;
 	}
 	return 0;
 }
 int 
-global_client_selector(struct myftpdhead *hpr)
+global_client_handler(struct myftpdhead *hpr, int event)
 {
-	// TODO: implement
+	int pid, stat;
+	switch (event) {
+		case GLOBAL_EV_RECVCONNREQ:
+			fprintf(stderr, "Dispatching client process\n");
+			// TODO: handle signals
+			switch ((pid == fork())) {
+				case -1:
+					report_error_and_exit(ERR_FORK, "global_client_handler");
+					break;
+				case 0:		/* child */
+					// TODO: execute cmd
+					exit(0);
+					break;
+				default:		/* parent */
+					if (waitpid(pid, &stat, 0) < 0) 
+						report_error_and_exit(ERR_WAIT, "global_client_handler");
+					break;
+			}
+	}
 	return 0;
 }
 
