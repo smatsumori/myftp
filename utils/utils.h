@@ -11,16 +11,22 @@
 #include <signal.h>
 #include <strings.h>
 #include <string.h>
+#include <netinet/in.h>
+#include <errno.h>
 
 /*** DEFINES ***/
 #define MAX_NAME 25
 #define MAX_DESCRIPTION 100
 #define CMD_LENGTH 20
 #define MAX_CMD 10
+#define DIR_LEN 100
+#define FTP_SERV_PORT 50020
+#define FTP_SERV_ADDR "131.113.108.53"
 
 /*** ERRORS ***/
 enum error_Flags {
-	ERR_MALLOC, ERR_SOCKET, ERROR_EVENT, ERR_PROCESSING, ERR_SENDTO
+	ERR_MALLOC, ERR_SOCKET, ERROR_EVENT, ERR_PROCESSING, ERR_SENDTO,
+	ERR_FORK, ERR_WAIT, ERR_RECV, ERR_SEND
 };
 
 /*** FSM ***/
@@ -33,7 +39,7 @@ struct eventtable {
 /*** UTILS ***/
 void report_error_and_exit(int errno, const char *msg)
 {
-	fprintf(stderr, "Runtime error\n");
+	fprintf(stderr, "Runtime error: %d\n", errno);
 	perror(msg);
 	exit(errno);
 }
@@ -65,4 +71,12 @@ void print_status(int id, struct eventtable *stabp)
 	return;
 }
 
+int 
+chdirw(char *dir) {
+	char pwd[DIR_LEN];
+	int stat = chdir(dir);
+	char *newPWD = getcwd(pwd, sizeof(pwd));
+	setenv("PWD", newPWD, 1);
+	return stat;
+}
 #endif 

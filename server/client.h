@@ -69,6 +69,7 @@ client_send_data(int sockd, char *msg)
 	int dataleft = sizeof(char) * strlen(msg);
 	fprintf(stderr, "Sending Data: %d\n", dataleft);
 	while (1) {
+		print_packeth(myftphp);
 		if (send(sockd, &myftphp, sizeof(myftphp), 0) < 0)
 			report_error_and_exit(ERR_SEND, "client_send_data");
 		if (send(sockd, msg, FTP_DATASIZE, 0) < 0)
