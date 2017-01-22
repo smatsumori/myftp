@@ -100,6 +100,8 @@ client_send_pwd(int sockd)
 	while (fgets(buf, sizeof(buf), fp) != 0) {
 		puts(buf);
 	}
+	int length = strlen(buf) * sizeof(char);
+	buf[length - 1] = '\0';			// remove escape sequence
 	client_send_data(sockd, buf);
 	pclose(fp);
 	return 0;
@@ -112,6 +114,8 @@ client_send_list(int sockd)
 	while (fgets(buf, sizeof(buf), fp) != 0) {
 		puts(buf);
 	}
+	int length = strlen(buf) * sizeof(char);
+	buf[length - 1] = '\0';
 	client_send_data(sockd, buf);
 	pclose(fp);
 	return 0;
