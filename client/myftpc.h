@@ -17,6 +17,7 @@ int chdirw(char *dir);
 void send_quit(struct myftpchead *hpr);
 void send_pwd(struct myftpchead *hpr);
 void send_dir(struct myftpchead *hpr);
+void tcpc_send(struct myftpchead *hpr);
 
 struct myftpchead {
 	int mysockd;		/* socket descriptor for this client */
@@ -77,7 +78,7 @@ setcmd(struct myftpchead *hpr, char cmd[CMD_LENGTH])
 		fprintf(stderr, "\n");
 		
 		/* set a ftp command */
-		for (struct typetable *ptr = &ttab; ; ptr++) {
+		for (struct typetable *ptr = ttab; ; ptr++) {
 			if (strcmp(ptr->cmd, "__SENTINEL__") == 0) {		// if client command
 				return 1;
 			} else if (strcmp(hpr->argv[0], ptr->cmd) == 0) {		// if ftp command

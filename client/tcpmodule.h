@@ -143,7 +143,7 @@ tcpc_recv(struct myftpchead *hpr)
 	// TODO; implement
 	/* common for server and client */
 	fprintf(stderr, "Recieving packet...\n");
-	int pc = 1;
+	int pc = 0;
 	int size;
 	char buf[FTP_MAX_RECVSIZE];
 	char obuf[FTP_DATASIZE];
@@ -155,7 +155,7 @@ tcpc_recv(struct myftpchead *hpr)
 		fprintf(stderr, "[%d] Size: %d, ", ++pc, size);
 		print_packeth(&myftphp);
 
-		if (myftphp.type == 0x20) {
+		if (myftphp.type == 0x20) {		// IF: data
 			if (myftphp.code == 0x00) {
 				fprintf(stderr, "EOF\n");
 				fprintf(stderr, "DATA: %s\n", buf);		// TODO: remove this
@@ -164,14 +164,22 @@ tcpc_recv(struct myftpchead *hpr)
 				/* recv ftp data */
 				if ((size = recv(hpr->mysockd, &obuf, FTP_DATASIZE, 0)) < 0)
 					report_error_and_exit(ERR_RECV, "client_recv");
-				fprintf(stderr, "[%d] Size: %d, ", ++pc, size);
+				fprintf(stderr, "[%d] Data Size: %d, ", ++pc, size);
 				print_packeth(&myftphp);
 				strcat(buf, obuf);
 				continue;
 			}
+		} else if (0 < myftphp.length) {		// IF: code data
+			if ((size = recv(hpr->mysockd, &obuf, FTP_DATASIZE, 0)) < 0)
+				report_error_and_exit(ERR_RECV, "client_recv");
+			fprintf(stderr, "[%d] Code Data Size: %d\n, ", ++pc, size);
+			//strcat(buf, obuf);
+			obuf[size] = '\0';
+			fprintf(stderr, "%s\n", obuf);
+			return;
 		} else {
 			return;
-		}
+		}	
 	}
 	return;
 }
