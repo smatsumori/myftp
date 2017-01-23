@@ -80,6 +80,7 @@ client_recv(int sockd, char *msg)		// has side effects on msg
 int
 client_send_data(int sockd, char *msg)
 {	
+	/* this is only for RETR */
 	struct myftp_packh myftphp = {
 		.type = 0x20, .code = 0x01, .length = sizeof(char) * strlen(msg)
 	};
@@ -107,16 +108,29 @@ client_send_data(int sockd, char *msg)
 }
 
 int
-client_send_code(int sockd, int type, int code)
+client_send_code(int sockd, int type, int code, char *codedata)
 {
+	/* send code and code data */
 	struct myftp_packh myftphp = {
 		.type =  type, .code = code, .length = sizeof(struct myftp_packh)
 	};
-	
-	fprintf(stderr, "Sending Command Packet: [type: 0x%d, code: 0x%d, size: %d]\n", 
-			myftphp.type, myftphp.code, myftphp.length);
+
+	if (codedata != NULL) {
+		/* code data follows */
+		myftphp.length = strlen(codedata);
+	}
+	fprintf(stderr, "Sending CMD packet: ");
+	print_packeth(&myftphp);
+
 	if (send(sockd, &myftphp, sizeof(myftphp), 0) < 0) 
 		report_error_and_exit(ERR_SEND, "client_send_code");
+
+	if (codedata != NULL) {
+		fprintf(stderr, "Sending CMD data: [%s]", codedata);
+		if (send(sockd, codedata, strlen(codedata), 0) < 0) 
+			report_error_and_exit(ERR_SEND, "client_send_code");
+	}
+
 	return 0;
 }
 
@@ -124,29 +138,29 @@ int
 client_send_pwd(int sockd, char *msg)
 {
 	char cbuf[256];
-	sprintf(cbuf, "pwd %s\0", msg);
+	sprintf(cbuf, "pwd %s", msg);
 	FILE *fp = popen(cbuf, "r");
 	char buf[256];		// TODO: remove magic no
 	while (fgets(buf, sizeof(buf), fp) != 0) {
 	}
 	int length = strlen(buf) * sizeof(char);
-	buf[length - 1] = '\0';			// remove escape sequence
-	client_send_code(sockd, 0x10, 0x00);	// HARDCODED
-	client_send_data(sockd, buf);		
+	buf[length - 1] = '\0';
+	fprintf(stderr, "buf %s\n", buf);
+	client_send_code(sockd, 0x10, 0x00, buf);	// HARDCODED
 	pclose(fp);
 	return 0;
 }
 int
 client_send_list(int sockd, char *msg)
 {
+	// Something wrong with ls
 	FILE *fp = popen("ls", "r");
 	char buf[256];		// TODO: remove magic no
 	while (fgets(buf, sizeof(buf), fp) != 0) {
 	}
 	int length = strlen(buf) * sizeof(char);
 	buf[length - 1] = '\0';
-	client_send_code(sockd, 0x10, 0x01);	// HARDCODED
-	client_send_data(sockd, buf);
+	client_send_code(sockd, 0x10, 0x01, buf);	// HARDCODED
 	pclose(fp);
 	return 0;
 }
@@ -156,10 +170,10 @@ client_send_cwd(int sockd, char *msg)
 {
 	if (chdirw(msg) == -1) {
 		fprintf(stderr, "No such directory: %s ERRNO:%d\n", msg, errno);
-		client_send_code(sockd, 0x10, 0x00);
+		client_send_code(sockd, 0x10, 0x00, NULL);
 	} else {
 		fprintf(stderr, "CD success\n");
-		client_send_code(sockd, 0x10, 0x00);
+		client_send_code(sockd, 0x10, 0x00, NULL);
 	}
 	return 0;
 }

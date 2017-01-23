@@ -39,7 +39,7 @@ global_client_handler(struct myftpdhead *hpr, int event)
 		case GLOBAL_EV_RECVCONNREQ:
 			fprintf(stderr, "Dispatching client process\n");
 			// TODO: handle signals
-			switch ((pid == fork())) {
+			switch ((pid = fork())) {
 				case -1:
 					report_error_and_exit(ERR_FORK, "global_client_handler");
 					break;
