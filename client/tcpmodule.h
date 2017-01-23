@@ -6,15 +6,12 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-
 #include "./myftpc.h"
 
 // TODO: move following defines to utils
 #define ERR_CONNECT 10
 #define ERR_ATON 11
 #define ERR_CLOSE 12
-#define FTP_SERV_PORT 50021
-#define FTP_SERV_ADDR "131.113.108.53"
 
 /*** PROTOTYPES ***/
 void dummy(struct myftpchead *hpr);
@@ -69,39 +66,73 @@ tcpc_connreq(struct myftpchead *hpr) {
 	return;
 }
 
+void
+tcpc_send_data(struct myftpchead *hpr)
+{
+	int hsize = 0;
+	int dsize = 0;
+	int dremains = 0;
+	struct myftp_packh myftphp = {
+		.type = 0x20, .code = 0x01, .length = sizeof(hpr->data_to_send)
+	};
+	/* send packet */
+	fprintf(stderr, "Sending data packet...\n");
+	dremains = myftphp.length;
+	
+	while (1) {
+		/* send ftp packet header */
+		if ((hsize = send(hpr->mysockd, &myftphp, sizeof myftphp, 0)) < 0) {
+			report_error_and_exit(ERR_SENDTO, "send");
+		}
+		/* send data packet or ftp EOF packet */
+		if (hpr->data_to_send != NULL) {
+			if (dremains <= 0) {		// EOF
+				if ((hsize = send(hpr->mysockd, &myftphp, sizeof myftphp, 0)) < 0) {
+					report_error_and_exit(ERR_SENDTO, "send");
+				}
+				break;
+			} else {
+				fprintf(stderr, "Dremains: %d\n", dremains);
+				if ((dsize = send(hpr->mysockd, hpr->data_to_send, FTP_DATASIZE, 0)) < 0) {
+					report_error_and_exit(ERR_SENDTO, "send");
+				}
+				dremains -= FTP_DATASIZE;
+			}
+		} else {
+			break;
+		}
+	}
+	fprintf(stderr, "Complete\n");
+	fprintf(stderr, "Data size: (HEAD)%d + (DATA)%d\n", hsize, dsize);
+	hpr->data_to_send = NULL;
+	return;
+}
 
 void
 tcpc_send(struct myftpchead *hpr)
 {
 	int hsize = 0;
 	int dsize = 0;
+	int dremains = 0;
 	/* send packet */
-	fprintf(stderr, "Sending packet...");
-
+	fprintf(stderr, "Sending code packet...");
 	/*  set header information */
 	hpr->packet_to_send.type  = hpr->type;
-	if (hpr->data_to_send == NULL) {	// no data to send
-		hpr->packet_to_send.length = 0;
-		hpr->packet_to_send.code = 0x00;
-	} else {		// data to send
-		hpr->packet_to_send.length = sizeof *(hpr->data_to_send);
-		hpr->packet_to_send.code = 0x01;	// data follows after this packet
-	}
+	hpr->packet_to_send.length = 0;
+	hpr->packet_to_send.code = 0x00;
+	/* send ftp code packet */
+	if ((hsize = send(hpr->mysockd, &hpr->packet_to_send,
+				 	sizeof hpr->packet_to_send, 0)) < 0)
+		report_error_and_exit(ERR_SENDTO, "send");
 
-	if ((hsize = sendto(hpr->mysockd, &hpr->packet_to_send, sizeof hpr->packet_to_send, 0,
-					(struct sockaddr *)&(hpr->servsockaddr), sizeof (hpr->servsockaddr))) < 0) {
-		report_error_and_exit(ERR_SENDTO, "sendto");
+	if (1 < hpr->argc) {
+		if ((dsize = send(hpr->mysockd, hpr->argv[1],
+						FTP_DATASIZE, 0)) < 0)
+			report_error_and_exit(ERR_SENDTO, "send");
+		fprintf(stderr, "ARG: %s\n", hpr->argv[1]);
 	}
-	if (hpr->data_to_send != NULL) {		/* if there is a data to send */
-		/* sending data at onece */
-		if ((dsize = sendto(hpr->mysockd, hpr->data_to_send, sizeof *hpr->data_to_send, 0,	//TODO: check if this works
-					(struct sockaddr *)&(hpr->servsockaddr), sizeof (hpr->servsockaddr))) < 0) {
-			report_error_and_exit(ERR_SENDTO, "sendto");
-		}
-	}
-	/* send data */
-	fprintf(stderr, "Complete\n");
-	fprintf(stderr, "Data size: (HEAD)%d + (DATA)%d\n", hsize, dsize);
+	fprintf(stderr, "Complete! ");
+	print_packeth(&hpr->packet_to_send);
 	hpr->data_to_send = NULL;
 	return;
 }
@@ -111,7 +142,37 @@ tcpc_recv(struct myftpchead *hpr)
 {
 	// TODO; implement
 	/* common for server and client */
-	fprintf(stderr, "Recieving packet...");
+	fprintf(stderr, "Recieving packet...\n");
+	int pc = 1;
+	int size;
+	char buf[FTP_MAX_RECVSIZE];
+	char obuf[FTP_DATASIZE];
+	static struct myftp_packh myftphp;
+	while (1) {
+		/* recv ftp packet header */
+		if ((size = recv(hpr->mysockd, &myftphp, sizeof(myftphp), 0)) < 0)
+			report_error_and_exit(ERR_RECV, "client_recv");
+		fprintf(stderr, "[%d] Size: %d, ", ++pc, size);
+		print_packeth(&myftphp);
+
+		if (myftphp.type == 0x20) {
+			if (myftphp.code == 0x00) {
+				fprintf(stderr, "EOF\n");
+				fprintf(stderr, "DATA: %s\n", buf);		// TODO: remove this
+				return;
+			} else if (myftphp.code == 0x01) {
+				/* recv ftp data */
+				if ((size = recv(hpr->mysockd, &obuf, FTP_DATASIZE, 0)) < 0)
+					report_error_and_exit(ERR_RECV, "client_recv");
+				fprintf(stderr, "[%d] Size: %d, ", ++pc, size);
+				print_packeth(&myftphp);
+				strcat(buf, obuf);
+				continue;
+			}
+		} else {
+			return;
+		}
+	}
 	return;
 }
 

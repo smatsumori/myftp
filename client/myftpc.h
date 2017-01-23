@@ -4,14 +4,8 @@
 /*** INCLUDES ***/
 #include "../utils/utils.h"
 #include "../utils/packet.h"
-#include <netinet/in.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdlib.h>
 
 #define CMD_LENGTH 20
-#define DIR_LEN 100
-
 #define ERR_EXECVP 10		// TODO: move below lines to utils.h
 
 /*** PROTOTYPES ***/
@@ -20,6 +14,9 @@ struct typetable;
 struct proctable;
 int setcmd(struct myftpchead *hpr, char cmd[CMD_LENGTH]);
 int chdirw(char *dir);
+void send_quit(struct myftpchead *hpr);
+void send_pwd(struct myftpchead *hpr);
+void send_dir(struct myftpchead *hpr);
 
 struct myftpchead {
 	int mysockd;		/* socket descriptor for this client */
@@ -28,7 +25,7 @@ struct myftpchead {
 	uint8_t code;
 	char argv[CMD_LENGTH][MAX_CMD];
 	char pwd[DIR_LEN];
-	char **data_to_send;		
+	char *data_to_send;		
 	struct sockaddr_in servsockaddr;
 	struct myftp_packh packet_to_send;
 	struct myftp_packh packet_recieved;
@@ -143,13 +140,70 @@ exec_cmd(struct myftpchead *hpr)
 	return;
 }
 
-int 
-chdirw(char *dir) {
-	char pwd[DIR_LEN];
-	int stat = chdir(dir);
-	char *newPWD = getcwd(pwd, sizeof(pwd));
-	setenv("PWD", newPWD, 1);
-	return stat;
+
+void
+send_quit(struct myftpchead *hpr)
+{
+	static struct myftp_packh pkh = {
+		.type = FTP_QUIT, .code = CODE_OK,
+		.length = 0
+	};
+	hpr->packet_to_send = pkh;
+	tcpc_send(hpr);
+	return;
 }
 
+void
+send_pwd(struct myftpchead *hpr)
+{
+	static struct myftp_packh pkh = {
+		.type = FTP_PWD, .code = CODE_OK,
+		.length = 0
+	};
+	if (1 < hpr->argc) {		// options
+		hpr->data_to_send = hpr->argv[1];
+	} else {
+		hpr->data_to_send = NULL;
+	}
+	hpr->packet_to_send = pkh;
+	tcpc_send(hpr);
+	return;
+}
+
+void
+send_dir(struct myftpchead *hpr)
+{
+	static struct myftp_packh pkh = {
+		.type = FTP_LIST, .code = CODE_OK,
+		.length = 0
+	};
+	if (1 < hpr->argc) {		// options
+		hpr->data_to_send = hpr->argv[1];
+	} else {
+		hpr->data_to_send = NULL;
+	}
+	
+	hpr->packet_to_send = pkh;
+	tcpc_send(hpr);
+	return;
+}
+
+void
+send_cwd(struct myftpchead *hpr)
+{
+	static struct myftp_packh pkh = {
+		.type = FTP_CWD, .code = CODE_OK,
+		.length = 0
+	};
+	if (1 < hpr->argc) {		// options
+		hpr->data_to_send = hpr->argv[1];
+	} else {
+		fprintf(stderr, "Invalid\n");
+		hpr->data_to_send = NULL;
+	}
+	
+	hpr->packet_to_send = pkh;
+	tcpc_send(hpr);
+	return;
+}
 #endif	// __HEADER_MYFTPC__

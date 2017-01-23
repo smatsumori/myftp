@@ -64,11 +64,12 @@ struct proctable ptab[] = {
 	{ST_ESTABLISHED, EV_STDIN, tcpc_send, ST_WAIT_PACKET},
 	{ST_ESTABLISHED, EV_STDIN_INVALID, dummy, ST_ESTABLISHED},
 	{ST_ESTABLISHED, EV_STDIN_CLICMD, exec_cmd, ST_ESTABLISHED},
-	{ST_ESTABLISHED, EV_FTPCMD_PWD, dummy, ST_WAIT_PWD},	// TODO: send msg
-	{ST_ESTABLISHED, EV_FTPCMD_CD, dummy, ST_WAIT_CWD},
-	{ST_ESTABLISHED, EV_FTPCMD_DIR, dummy, ST_WAIT_LIST},
+	{ST_ESTABLISHED, EV_FTPCMD_PWD, send_pwd, ST_WAIT_PWD},	// TODO: send msg
+	{ST_ESTABLISHED, EV_FTPCMD_CD, send_cwd, ST_WAIT_CWD},
+	{ST_ESTABLISHED, EV_FTPCMD_DIR, send_dir, ST_WAIT_LIST},
 	{ST_ESTABLISHED, EV_FTPCMD__GET, dummy, ST_WAIT__RETR_OK},
 	{ST_ESTABLISHED, EV_FTPCMD__PUT, dummy, ST_WAIT__STOR_OK},
+	{ST_ESTABLISHED, EV_FTPCMD_QUIT, send_quit, ST_EXIT},
 	{ST_WAIT_PWD, EV_RECV_PACKET, dummy, ST_ESTABLISHED},			//TODO: show msg
 	{ST_WAIT_CWD, EV_RECV_PACKET, dummy, ST_ESTABLISHED},
 	{ST_WAIT_LIST, EV_RECV_PACKET, dummy, ST_ESTABLISHED},
@@ -138,6 +139,12 @@ wait_event(struct myftpchead *hpr, int status)
 		case ST_WAIT_PACKET_RE:
 		case ST_WAIT_PACKET:
 			return EV_RECV_PACKET;	// TODO: implement
+		case ST_WAIT_PWD:
+		case ST_WAIT_CWD:
+		case ST_WAIT_LIST:
+			tcpc_recv(hpr);
+			return EV_RECV_PACKET;
+			break;
 
 		case ST_ESTABLISHED:
 			fprintf(stderr, "$ftp ");

@@ -37,11 +37,11 @@ struct eventtable {
 };
 
 /*** UTILS ***/
-void report_error_and_exit(int errno, const char *msg)
+void report_error_and_exit(int erno, const char *msg)
 {
-	fprintf(stderr, "Runtime error: %d\n", errno);
+	fprintf(stderr, "Runtime error: %d\n", erno);
 	perror(msg);
-	exit(errno);
+	exit(erno);
 }
 
 void print_event(int id, struct eventtable *etabp)
