@@ -109,6 +109,7 @@ client_recv_data(int sockd, char *msg)
 		/* recv data packet */
 		if ((size = recv(sockd, &myftphp, sizeof(myftphp), 0)) < 0)
 			report_error_and_exit(ERR_RECV, "client_recv");
+
 		fprintf(stderr, "Packet Recived: %d, ", size);
 		print_packeth(&myftphp);
 
@@ -122,7 +123,6 @@ client_recv_data(int sockd, char *msg)
 				/* recv ftp data */
 				if ((size = recv(sockd, &obuf, FTP_DATASIZE, 0)) < 0)
 					report_error_and_exit(ERR_RECV, "client_recv");
-				fprintf(stderr, "data: %s", obuf);
 				strcat(buf, obuf);
 				continue;
 			}
@@ -168,7 +168,7 @@ client_send_code(int sockd, int type, int code, char *codedata)
 {
 	/* send code and code data */
 	struct myftp_packh myftphp = {
-		.type =  type, .code = code, .length = sizeof(struct myftp_packh)
+		.type =  type, .code = code, .length = 0
 	};
 
 	if (codedata != NULL) {
@@ -242,15 +242,14 @@ client_send_store_ack(int sockd, char *msg)
 	 * the current directory has a write 
 	 * permission 
 	 */
-
-	if (msg != NULL) {
+	if (strlen(msg) != 0) {
 		/* check directory exists */
 		DIR *dirp = opendir(msg);
 		if (dirp) {
 			fprintf(stderr, "Valid directory\n");
 			closedir(dirp);
 		} else if (ENOENT == errno) {
-			fprintf(stderr, "Directory does not exist.\n");
+			fprintf(stderr, "Directory does not exist. [%s]\n", msg);
 			client_send_code(sockd, 0x12, 0x00, NULL);
 			return -1;
 		} else if (EACCES == errno) {
@@ -268,7 +267,10 @@ client_recv_store(int sockd, char *dir)
 {
 	char recvfile[FTP_MAX_RECVSIZE];
 	client_recv_data(sockd, recvfile);
-	fprintf(stderr, "recvfile: %s\n", recvfile);
+	fprintf(stderr, "---------- DATA ------------\n");
+	fprintf(stderr, "%s", recvfile);
+	fprintf(stderr, "--------------------------\n");
+	/* TODO: write to directory */
 	return 0;
 }
 int
