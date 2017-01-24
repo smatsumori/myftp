@@ -233,16 +233,4 @@ send_stor(struct myftpchead *hpr)
 	fclose(pFile);
 	return;
 }
-void
-send_data(struct myftpchead *)
-{
-	// TODO: implement store first
-	return;
-}
-void 
-recv_data(struct myftpchead *)
-{
-	// TODO: implement
-	return;
-}
 #endif	// __HEADER_MYFTPC__

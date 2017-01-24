@@ -118,18 +118,20 @@ tcpc_send(struct myftpchead *hpr)
 	fprintf(stderr, "Sending code packet...");
 	/*  set header information */
 	hpr->packet_to_send.type  = hpr->type;
+	hpr->packet_to_send.code = hpr->code;
 	hpr->packet_to_send.length = 0;
-	hpr->packet_to_send.code = 0x00;
+	if (1 < hpr->argc) {
+		hpr->packet_to_send.length = strlen(hpr->argv[1]);
+	}
 	/* send ftp code packet */
 	if ((hsize = send(hpr->mysockd, &hpr->packet_to_send,
 				 	sizeof hpr->packet_to_send, 0)) < 0)
 		report_error_and_exit(ERR_SENDTO, "send");
 
 	if (1 < hpr->argc) {
-		if ((dsize = send(hpr->mysockd, hpr->argv[1],
-						FTP_DATASIZE, 0)) < 0)
-			report_error_and_exit(ERR_SENDTO, "send");
 		fprintf(stderr, "ARG: %s\n", hpr->argv[1]);
+		if ((dsize = send(hpr->mysockd, hpr->argv[1],strlen(hpr->argv[1]), 0)) < 0)
+			report_error_and_exit(ERR_SEND, "send");
 	}
 	fprintf(stderr, "Complete! ");
 	print_packeth(&hpr->packet_to_send);
@@ -140,7 +142,6 @@ tcpc_send(struct myftpchead *hpr)
 void
 tcpc_recv(struct myftpchead *hpr)
 {
-	// TODO; implement
 	/* common for server and client */
 	fprintf(stderr, "Recieving packet...\n");
 	int pc = 0;
