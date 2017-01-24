@@ -43,7 +43,7 @@ client_handler(struct myftpdhead *hpr)
 				break;
 			
 			case FTP_RETR:
-				if (client_send_retr_ack(clisockd, msg)) {
+				if (client_send_retr_ack(clisockd, msg) < 0) {
 					fprintf(stderr, "Error retr cmd\n");
 					break;
 				}
@@ -273,14 +273,34 @@ client_recv_store(int sockd, char *dir)
 	/* TODO: write to directory */
 	return 0;
 }
+
 int
 client_send_retr(int sockd, char *dir)
 {
 	return 0;
 }
+
 int
-client_send_retr_ack(int sockd, char *dir)
+client_send_retr_ack(int sockd, char *filename)
 {
+	/* returns -1 if not valid */
+	/* TODO: this does not check if 
+	 * the current directory has a write 
+	 * permission 
+	 */
+	FILE *pFile = fopen(filename);
+	if (pFile) {
+		fprintf(stderr, "Valid file name: %s\n", filename);
+		fclose(pFile);
+	} else if (ENOENT == errno) {
+		fprintf(stderr, "File does not exist. [%s]\n", msg);
+		client_send_code(sockd, 0x12, 0x00, NULL);
+		return -1;
+	} else if (EACCES == errno) {
+		fprintf(stderr, "Permission denied\n");
+		client_send_code(sockd, 0x12, 0x01, NULL);
+		return -2;
+	}
 	return 0;
 }
 #endif	// End of __FTP_CLIENT_HEADER__
