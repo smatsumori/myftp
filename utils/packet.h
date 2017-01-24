@@ -34,7 +34,7 @@ struct myftp_packh {
 void
 print_packeth(struct myftp_packh *fpr)
 {
-	printf("Type: 0x%x, Code: 0x%x, Size: %d\n", fpr->type, fpr->code, fpr->length);
+	printf("Type: 0x%x, Code: 0x%x, Length: %d\n", fpr->type, fpr->code, fpr->length);
 	return;
 }
 

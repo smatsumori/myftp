@@ -13,6 +13,7 @@
 #include <string.h>
 #include <netinet/in.h>
 #include <errno.h>
+#include <dirent.h>
 
 /*** DEFINES ***/
 #define MAX_NAME 25
@@ -20,7 +21,7 @@
 #define CMD_LENGTH 20
 #define MAX_CMD 10
 #define DIR_LEN 100
-#define FTP_SERV_PORT 50020
+#define FTP_SERV_PORT 50030
 #define FTP_SERV_ADDR "131.113.108.53"
 
 /*** ERRORS ***/
