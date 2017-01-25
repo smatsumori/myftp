@@ -163,6 +163,7 @@ tcpc_recv(struct myftpchead *hpr)
 			report_error_and_exit(ERR_RECV, "client_recv");
 		fprintf(stderr, "[%d] Size: %d, ", ++pc, size);
 		print_packeth(&myftphp);
+		hpr->packet_recieved = myftphp;
 
 		if (myftphp.type == 0x20) {		// IF: data
 			if (myftphp.code == 0x00) {

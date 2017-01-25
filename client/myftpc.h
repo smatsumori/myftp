@@ -23,6 +23,7 @@ void tcpc_send_data(struct myftpchead *hpr);
 void send_data(struct myftpchead *);
 void recv_data(struct myftpchead *);
 void send_retr(struct myftpchead *);
+int packet_checker(struct myftpchead *);
 
 struct myftpchead {
 	int mysockd;		/* socket descriptor for this client */
@@ -291,5 +292,71 @@ recv_data(struct myftpchead *hpr)
 	fprintf(stderr, "file saved\n");
 	hpr->data_to_send = NULL;
 	return;
+}
+
+int
+packet_checker(struct myftpchead *hpr)
+{
+	int type = hpr->packet_recieved.type;
+	int code = hpr->packet_recieved.code;
+	print_packeth(&hpr->packet_recieved);
+
+	switch (type) {
+		case FTP_QUIT:
+		case FTP_PWD:
+		case FTP_LIST:
+		case FTP_RETR:
+		case FTP_CWD:
+		case FTP_STOR:
+		case 0x20:
+			return 0;
+
+		case 0x10:
+			switch (code) {
+				case 0x00:
+				case 0x01:
+				case 0x02:
+				return 1;
+			}
+
+		case 0x11:		// CMd
+			switch (code) {
+				case 0x01:
+					fprintf(stderr, "CMD-ERR: Syntax\n");
+					break;
+				case 0x02:
+					fprintf(stderr, "CMD-ERR: Undefined\n");
+					break;
+				case 0x03:
+					fprintf(stderr, "CMD-ERR: Protocol\n");
+					break;
+				default:
+					return -1;
+			}
+		
+		case 0x12:		// FILE
+			switch (code) {
+				case 0x00:
+					fprintf(stderr, "FILE-ERR: Directory not found.\n");
+					break;
+				case 0x01:
+					fprintf(stderr, "FILE-ERR: Permission denied\n");
+					break;
+				default:
+					return -2;
+			}
+
+		case 0x13:	// Undefined
+			switch (code) {
+				case 0x05:
+					fprintf(stderr, "UNKWN-ERR: Undefined\n");
+				default:
+					return -3;
+			}
+
+		default:
+			return -4;
+	}
+	return -1;
 }
 #endif	// __HEADER_MYFTPC__

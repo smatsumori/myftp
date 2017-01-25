@@ -6,9 +6,9 @@ int wait_event(struct myftpchead *hpr, int status);
 // TODO: remove EV_STDIN
 enum event_Flags {
 	EV_SENTINEL, EV_INIT_CMPL, EV_STDIN, EV_STDIN_INVALID, EV_RECV_PACKET,
-	EV_FTPCMD_QUIT, EV_FTPCMD_PWD, EV_FTPCMD_CD, EV_FTPCMD_DIR,		// 2-steps-commands	TODO:
-	EV_FTPCMD__GET, EV_FTPCMD__PUT,															// 3-steps-commands TODO:
-	EV_RECV_CMDERR, EV_RECV_FILEERR, EV_RECV_UNKWNERR,
+	EV_FTPCMD_QUIT, EV_FTPCMD_PWD, EV_FTPCMD_CD, EV_FTPCMD_DIR,		// 2-steps-commands
+	EV_FTPCMD__GET, EV_FTPCMD__PUT,															// 3-steps-commands
+	EV_RECV_INVALID,
 	EV_TIMEOUT, EV_EXIT, EV_INVALID, EV_STDIN_CLICMD,
 };
 
@@ -32,9 +32,7 @@ struct eventtable etab[] = {
 	{EV_EXIT, "EV_EXIT", "Exiting client."},
 	{EV_INVALID, "EV_INVALID", "Invalid Event."},
 	{EV_STDIN_CLICMD, "EV_STDIN_CLICMD", "Client command."},
-	{EV_RECV_CMDERR, "EV_RECV_CMDERR", "Command Error."},
-	{EV_RECV_FILEERR, "EV_RECV_FILEERR", "File Error."},
-	{EV_RECV_UNKWNERR, "EV_RECV_UNKWNERR", "Unknown Error."},
+	{EV_RECV_INVALID, "EV_RECV_INVALID", "Error packet recieved."},
 	{EV_FTPCMD_QUIT, "EV_FTPCMD_QUIT", "Close connection."},
 	{EV_FTPCMD_PWD, "EV_FTPCMD_PWD", "Ftpcmd pwd"},
 	{EV_FTPCMD_DIR, "EV_FTPCMD_DIR", "Ftpcmd dir"},
@@ -63,21 +61,24 @@ struct proctable ptab[] = {
 	{ST_ESTABLISHED, EV_STDIN, tcpc_send, ST_WAIT_PACKET},
 	{ST_ESTABLISHED, EV_STDIN_INVALID, dummy, ST_ESTABLISHED},
 	{ST_ESTABLISHED, EV_STDIN_CLICMD, exec_cmd, ST_ESTABLISHED},
-	{ST_ESTABLISHED, EV_FTPCMD_PWD, send_pwd, ST_WAIT_PWD},	// TODO: send msg
+	{ST_ESTABLISHED, EV_FTPCMD_PWD, send_pwd, ST_WAIT_PWD},
 	{ST_ESTABLISHED, EV_FTPCMD_CD, send_cwd, ST_WAIT_CWD},
 	{ST_ESTABLISHED, EV_FTPCMD_DIR, send_dir, ST_WAIT_LIST},
 	{ST_ESTABLISHED, EV_FTPCMD__GET, send_retr, ST_WAIT__RETR_OK},
 	{ST_ESTABLISHED, EV_FTPCMD__PUT, send_stor, ST_WAIT__STOR_OK},
 	{ST_ESTABLISHED, EV_FTPCMD_QUIT, send_quit, ST_EXIT},
-	{ST_WAIT_PWD, EV_RECV_PACKET, dummy, ST_ESTABLISHED},			//TODO: show msg
+	{ST_WAIT_PWD, EV_RECV_PACKET, dummy, ST_ESTABLISHED},
+	{ST_WAIT_PWD, EV_RECV_INVALID, dummy, ST_ESTABLISHED},
 	{ST_WAIT_CWD, EV_RECV_PACKET, dummy, ST_ESTABLISHED},
+	{ST_WAIT_CWD, EV_RECV_INVALID, dummy, ST_ESTABLISHED},
 	{ST_WAIT_LIST, EV_RECV_PACKET, dummy, ST_ESTABLISHED},
-	{ST_WAIT__RETR_OK, EV_RECV_PACKET, recv_data, ST_ESTABLISHED},		//TODO: send packet
-	{ST_WAIT__RETR_OK, EV_RECV_FILEERR, dummy, ST_ESTABLISHED}, // TODO: show err msg
+	{ST_WAIT_LIST, EV_RECV_INVALID, dummy, ST_ESTABLISHED},
+	{ST_WAIT__RETR_OK, EV_RECV_PACKET, recv_data, ST_ESTABLISHED},
+	{ST_WAIT__RETR_OK, EV_RECV_INVALID, dummy, ST_ESTABLISHED}, 
 	{ST_WAIT__STOR_OK, EV_RECV_PACKET, send_data, ST_ESTABLISHED},
-	{ST_WAIT__STOR_OK, EV_RECV_FILEERR, dummy, ST_ESTABLISHED},
+	{ST_WAIT__STOR_OK, EV_RECV_INVALID, dummy, ST_ESTABLISHED},
 	{ST_WAIT_PACKET, EV_TIMEOUT, tcpc_send, ST_WAIT_PACKET_RE},
-	{ST_WAIT_PACKET, EV_RECV_PACKET, dummy, ST_ESTABLISHED},		// TODO: remove dummy and show pack
+	{ST_WAIT_PACKET, EV_RECV_PACKET, dummy, ST_ESTABLISHED},
 	{ST_WAIT_PACKET_RE, EV_TIMEOUT, tcpc_close, ST_EXIT},
 	{ST_SENTINEL, EV_SENTINEL, NULL, ST_SENTINEL}
 };
@@ -129,7 +130,7 @@ int main(int argc, char const* argv[])
 int
 wait_event(struct myftpchead *hpr, int status)
 {	
-	//TODO: implement packet handler
+	// TODO: implement packet handler
 	char cmd[CMD_LENGTH];	
 	switch (status) {
 		case ST_INIT:
@@ -145,7 +146,11 @@ wait_event(struct myftpchead *hpr, int status)
 		case ST_WAIT_CWD:
 		case ST_WAIT_LIST:
 			tcpc_recv(hpr);
-			return EV_RECV_PACKET;
+			if (packet_checker(hpr) <= 0) {	// invalid
+				return EV_RECV_INVALID;
+			} else {
+				return EV_RECV_PACKET;
+			}
 			break;
 
 		case ST_ESTABLISHED:
