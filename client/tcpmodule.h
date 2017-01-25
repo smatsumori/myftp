@@ -73,20 +73,27 @@ tcpc_send_data(struct myftpchead *hpr)
 	int dsize = 0;
 	int dremains = 0;
 	struct myftp_packh myftphp = {
-		.type = 0x20, .code = 0x01, .length = sizeof(hpr->data_to_send)
+		.type = 0x20, .code = 0x01, .length = strlen(hpr->data_to_send)
 	};
-	/* send packet */
-	fprintf(stderr, "Sending data packet...\n");
+	fprintf(stderr, "Sending data packet...\n", hpr->data_to_send);
 	dremains = myftphp.length;
 	
+	/* send ftp packet header */
+	if ((hsize = send(hpr->mysockd, &myftphp, sizeof myftphp, 0)) < 0) {
+		report_error_and_exit(ERR_SENDTO, "send");
+	}
+	fprintf(stderr, "Sending Head Packet ");
+	print_packeth(&myftphp);
+
 	while (1) {
-		/* send ftp packet header */
-		if ((hsize = send(hpr->mysockd, &myftphp, sizeof myftphp, 0)) < 0) {
-			report_error_and_exit(ERR_SENDTO, "send");
-		}
+
 		/* send data packet or ftp EOF packet */
 		if (hpr->data_to_send != NULL) {
 			if (dremains <= 0) {		// EOF
+				myftphp.type = 0x20;
+				myftphp.code = 0x00;
+				fprintf(stderr, "Sending EOF ");
+				print_packeth(&myftphp);
 				if ((hsize = send(hpr->mysockd, &myftphp, sizeof myftphp, 0)) < 0) {
 					report_error_and_exit(ERR_SENDTO, "send");
 				}
@@ -96,6 +103,7 @@ tcpc_send_data(struct myftpchead *hpr)
 				if ((dsize = send(hpr->mysockd, hpr->data_to_send, FTP_DATASIZE, 0)) < 0) {
 					report_error_and_exit(ERR_SENDTO, "send");
 				}
+				fprintf(stderr, "Sending Data %d\n", dsize);
 				dremains -= FTP_DATASIZE;
 			}
 		} else {
@@ -160,6 +168,7 @@ tcpc_recv(struct myftpchead *hpr)
 			if (myftphp.code == 0x00) {
 				fprintf(stderr, "EOF\n");
 				fprintf(stderr, "DATA: %s\n", buf);		// TODO: remove this
+				hpr->data_to_send = buf;
 				return;
 			} else if (myftphp.code == 0x01) {
 				/* recv ftp data */

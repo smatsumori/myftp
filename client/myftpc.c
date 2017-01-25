@@ -66,7 +66,7 @@ struct proctable ptab[] = {
 	{ST_ESTABLISHED, EV_FTPCMD_PWD, send_pwd, ST_WAIT_PWD},	// TODO: send msg
 	{ST_ESTABLISHED, EV_FTPCMD_CD, send_cwd, ST_WAIT_CWD},
 	{ST_ESTABLISHED, EV_FTPCMD_DIR, send_dir, ST_WAIT_LIST},
-	{ST_ESTABLISHED, EV_FTPCMD__GET, dummy, ST_WAIT__RETR_OK},
+	{ST_ESTABLISHED, EV_FTPCMD__GET, send_retr, ST_WAIT__RETR_OK},
 	{ST_ESTABLISHED, EV_FTPCMD__PUT, send_stor, ST_WAIT__STOR_OK},
 	{ST_ESTABLISHED, EV_FTPCMD_QUIT, send_quit, ST_EXIT},
 	{ST_WAIT_PWD, EV_RECV_PACKET, dummy, ST_ESTABLISHED},			//TODO: show msg
@@ -138,6 +138,9 @@ wait_event(struct myftpchead *hpr, int status)
 		case ST_WAIT_PACKET_RE:
 		case ST_WAIT_PACKET:
 			return EV_RECV_PACKET;	// TODO: implement
+
+		case ST_WAIT__RETR_OK:
+		case ST_WAIT__STOR_OK:
 		case ST_WAIT_PWD:
 		case ST_WAIT_CWD:
 		case ST_WAIT_LIST:

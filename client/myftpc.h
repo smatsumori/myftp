@@ -4,6 +4,7 @@
 /*** INCLUDES ***/
 #include "../utils/utils.h"
 #include "../utils/packet.h"
+#include <time.h>
 
 #define CMD_LENGTH 20
 #define ERR_EXECVP 10		// TODO: move below lines to utils.h
@@ -21,6 +22,7 @@ void tcpc_send(struct myftpchead *hpr);
 void tcpc_send_data(struct myftpchead *hpr);
 void send_data(struct myftpchead *);
 void recv_data(struct myftpchead *);
+void send_retr(struct myftpchead *);
 
 struct myftpchead {
 	int mysockd;		/* socket descriptor for this client */
@@ -30,6 +32,7 @@ struct myftpchead {
 	char argv[CMD_LENGTH][MAX_CMD];
 	char pwd[DIR_LEN];
 	char *data_to_send;		
+	FILE * pFile;
 	struct sockaddr_in servsockaddr;
 	struct myftp_packh packet_to_send;
 	struct myftp_packh packet_recieved;
@@ -220,29 +223,73 @@ send_stor(struct myftpchead *hpr)
 	};
 
 	// TODO: handle read error
-
-	char buf[6000];		// TODO: remove magic
 	fprintf(stderr, "argv%s\n", hpr->argv[1]);
-	FILE * pFile;
-	pFile	= fopen(hpr->argv[1], "r");
-	while (fgets(buf, 6000, pFile) != NULL) {
-		puts(buf);
-	}
-	hpr->data_to_send = buf;
+	hpr->pFile	= fopen(hpr->argv[1], "r");
+	strcpy(hpr->argv[1], hpr->argv[2]);
   tcpc_send(hpr);
-	fclose(pFile);
 	return;
 }
+
 void
-send_data(struct myftpchead *)
+send_retr(struct myftpchead *hpr)
+{
+	static struct myftp_packh pkh = {
+		.type = FTP_RETR, .code = CODE_OK,
+		.length = 0
+	};
+	
+	time_t t = time(NULL);
+	struct tm tm = *localtime(&t);
+	char filename[100];
+	FILE *fp;
+	if (hpr->argv[2] != NULL) {
+		fprintf(stderr, "filename:%s, save dir:%s\n", 
+				hpr->argv[1], hpr->argv[2]);
+		sprintf(filename, "./%s/newfile-%d-%d-%d-%d-%d-%d", hpr->argv[2],
+				tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour,
+				tm.tm_min, tm.tm_sec);
+	} else {
+		fprintf(stderr, "filename:%s, save dir:./\n", 
+				hpr->argv[1]);
+		sprintf(filename, "./newfile-%d-%d-%d-%d-%d-%d",
+				tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour,
+				tm.tm_min, tm.tm_sec);
+	}
+	fp = fopen(filename, "w");
+	hpr->pFile = fp;
+  tcpc_send(hpr);
+	return;
+}
+
+void
+send_data(struct myftpchead *hpr)
 {
 	// TODO: implement store first
+  char line[1000];
+	static char buf[FTP_MAX_RECVSIZE];		// TODO: remove magic
+	while (fgets(line, 1000, hpr->pFile) != NULL) {
+		strcat(buf, line);
+	}
+	hpr->data_to_send = buf;
+	tcpc_send_data(hpr);
+	fclose(hpr->pFile);
 	return;
 }
+
 void 
-recv_data(struct myftpchead *)
+recv_data(struct myftpchead *hpr)
 {
 	// TODO: implement
+	
+	tcpc_recv(hpr);
+	if (hpr->pFile != NULL) {
+		fputs(hpr->data_to_send, hpr->pFile);
+	} else {
+		fprintf(stderr, "ERROR: Cannot open file\n");
+	}
+	fclose(hpr->pFile);
+	fprintf(stderr, "file saved\n");
+	hpr->data_to_send = NULL;
 	return;
 }
 #endif	// __HEADER_MYFTPC__
