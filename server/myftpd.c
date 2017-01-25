@@ -60,7 +60,7 @@ global_client_handler(struct myftpdhead *hpr, int event)
 int main(int argc, char const* argv[])
 {
 	#ifndef DEBUG
-		if (0 < argc) {
+		if (1 < argc) {
 			 if (chdirw((char *)argv[1]) < 0) {
 					report_error_and_exit(ERR_CHDIR, "Invalid path");
 			 }

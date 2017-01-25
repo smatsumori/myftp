@@ -50,15 +50,17 @@ tcpc_init(struct myftpchead *hpr) {
 	#ifndef DEBUG
 		struct addrinfo hints;
 		struct addrinfo *res;
-		fprintf(stderr, "resolving hostname: %s\n", hpr->hostname);
+		fprintf(stderr, "resolving hostname: %s:%d\n", hpr->hostname, FTP_SERV_PORT);
 		int err, sd;
+		char port[10];
+		sprintf(port, "%d", FTP_SERV_PORT);
 		memset(&hints, 0, sizeof hints);
 		hints.ai_socktype = SOCK_STREAM;
-		if ((err = getaddrinfo((char *)hpr->hostname, "http", &hints, &res)) < 0) {
+		if ((err = getaddrinfo((char *)hpr->hostname, port, &hints, &res)) < 0) {
 			report_error_and_exit(ERR_GETADDR, "Cannot resolve hostname\n");
 		}
 		if ((connect(hpr->mysockd, res->ai_addr, res->ai_addrlen)) < 0)
-			report_error_and_exit(ERR_CONNECT, "tcpc_connreq");
+			report_error_and_exit(ERR_CONNECT, "tcpc_connreq: getaddr");
 	#endif
 
 	#ifdef ANYADDR
