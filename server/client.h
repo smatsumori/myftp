@@ -183,7 +183,7 @@ client_send_code(int sockd, int type, int code, char *codedata)
 		report_error_and_exit(ERR_SEND, "client_send_code");
 
 	if (codedata != NULL) {
-		fprintf(stderr, "Sending CMD data: [%s]", codedata);
+		fprintf(stderr, "Sending CMD data: [%s]\n", codedata);
 		if (send(sockd, codedata, strlen(codedata), 0) < 0) 
 			report_error_and_exit(ERR_SEND, "client_send_code");
 	}
@@ -195,8 +195,8 @@ int
 client_send_pwd(int sockd, char *msg)
 {
 	char cbuf[256];
-	sprintf(cbuf, "pwd %s", msg);
-	FILE *fp = popen(cbuf, "r");
+	FILE *fp = popen("pwd", "r");
+
 	char buf[CMD_BUFLEN];
 	while (fgets(buf, sizeof(buf), fp) != 0) {
 	}
@@ -207,10 +207,38 @@ client_send_pwd(int sockd, char *msg)
 	pclose(fp);
 	return 0;
 }
+
 int
 client_send_list(int sockd, char *msg)
 {
-	FILE *fp = popen("ls", "r");
+	char cmd[30];
+	if (msg != NULL) {
+		sprintf(cmd, "ls ./%s", msg);
+		DIR *dirp = opendir(msg);
+		if (dirp == NULL) {
+			switch (errno) {
+				case EACCES:
+					fprintf(stderr, "Permission denied\n");
+					client_send_code(sockd, 0x12, 0x01, NULL);
+					break;
+				case ENOENT:
+					fprintf(stderr, "No such file or directory\n");
+					client_send_code(sockd, 0x12, 0x00, NULL);
+					break;
+				default:
+					fprintf(stderr, "Undefined Error\n");
+					client_send_code(sockd, 0x13, 0x05, NULL);
+					break;
+			}
+			return -1;
+		}
+	} else {
+		sprintf(cmd, "ls", msg);
+	}
+	fprintf(stderr, "executing: %s\n", cmd);
+	FILE *fp = popen(cmd, "r");
+
+
 	char obuf[1000];
 	char buf[CMD_BUFLEN] = "";	
 	while (fgets(obuf, sizeof(obuf), fp) != NULL) {
@@ -229,7 +257,7 @@ client_send_cwd(int sockd, char *msg)
 	if (chdirw(msg) == -1) {
 		// TODO: handle error
 		fprintf(stderr, "No such directory: %s ERRNO:%d\n", msg, errno);
-		client_send_code(sockd, 0x10, 0x00, NULL);
+		client_send_code(sockd, 0x12, 0x00, NULL);
 	} else {
 		fprintf(stderr, "CD success\n");
 		client_send_code(sockd, 0x10, 0x00, NULL);
@@ -245,7 +273,6 @@ client_send_store_ack(int sockd, char *msg)
 	 * the current directory has a write 
 	 * permission 
 	 */
-	fprintf(stderr, "hoge%s\n", msg);
 	if (msg != NULL) {
 		/* check directory exists */
 		DIR *dirp = opendir(msg);
@@ -260,6 +287,10 @@ client_send_store_ack(int sockd, char *msg)
 			fprintf(stderr, "Permission denied\n");
 			client_send_code(sockd, 0x12, 0x01, NULL);
 			return -2;
+		} else {
+			fprintf(stderr, "Undefined error\n");
+			client_send_code(sockd, 0x13, 0x05, NULL);
+			return -3;
 		}
 	}
 	client_send_code(sockd, 0x10, 0x02, NULL);
@@ -318,6 +349,10 @@ client_send_retr_ack(int sockd, char *filename)
 		fprintf(stderr, "Permission denied\n");
 		client_send_code(sockd, 0x12, 0x01, NULL);
 		return -2;
+	} else {
+		fprintf(stderr, "Undefined error\n");
+		client_send_code(sockd, 0x13, 0x05, NULL);
+		return -3;
 	}
 	client_send_code(sockd, 0x10, 0x01, NULL);
 	return 0;
