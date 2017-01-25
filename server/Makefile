@@ -6,7 +6,7 @@ DEPS = tcpdmodule.h myftpd.h
 
 LDFLAGS = 
 CFLAGS = -g -O
-DFLAGS = -D DEBUG
+DFLAGS = 
 
 RM = rm -f
 

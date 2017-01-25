@@ -14,6 +14,7 @@
 #include <netinet/in.h>
 #include <errno.h>
 #include <dirent.h>
+#include <netdb.h>
 
 /*** DEFINES ***/
 #define MAX_NAME 25

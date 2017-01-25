@@ -65,7 +65,7 @@ client_recv(int sockd, char *msg[CMD_BUFLEN])		// has side effects on msg
 {
 	*msg = NULL;
 	int size;
-  static char obuf[FTP_DATASIZE];
+  char obuf[FTP_DATASIZE] = "";
 	struct myftp_packh myftphp;
 
 	while (1) {

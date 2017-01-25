@@ -94,14 +94,19 @@ struct command_table {	// TODO: ADD command here
 /*** MAIN ***/
 int main(int argc, char const* argv[])
 {
+	struct proctable *ptptr;
+	struct myftpchead *hpr = &ftpched;
 	#ifdef DEBUG
 		fprintf(stderr, "Running on DEBUG MODE\n");
 	#endif
 	#ifndef DEBUG
-		/* get server host name from stdin */
+		if (1 < argc) {
+			hpr->hostname = argv[1];
+		} else {
+			fprintf(stderr, "usage: ./myftpcout <hostname>\n");
+			exit(0);
+		}
 	#endif
-	struct proctable *ptptr;
-	struct myftpchead *hpr = &ftpched;
 	int status = ST_INIT;
 	int event = EV_INIT_CMPL;
 

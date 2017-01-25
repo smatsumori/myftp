@@ -59,6 +59,14 @@ global_client_handler(struct myftpdhead *hpr, int event)
 /*** MAIN ***/
 int main(int argc, char const* argv[])
 {
+	#ifndef DEBUG
+		if (0 < argc) {
+			 if (chdirw((char *)argv[1]) < 0) {
+					report_error_and_exit(ERR_CHDIR, "Invalid path");
+			 }
+			 fprintf(stderr, "Server Default PWD: %s\n", getenv("PWD"));
+		}
+	#endif
 	int event;
 	struct myftpdhead *hpr = &myftpdh;
 	tcpd_init(hpr);

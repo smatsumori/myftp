@@ -20,6 +20,7 @@ void send_pwd(struct myftpchead *hpr);
 void send_dir(struct myftpchead *hpr);
 void tcpc_send(struct myftpchead *hpr);
 void tcpc_send_data(struct myftpchead *hpr);
+void tcpc_recv(struct myftpchead *hpr);
 void send_data(struct myftpchead *);
 void recv_data(struct myftpchead *);
 void send_retr(struct myftpchead *);
@@ -30,6 +31,7 @@ struct myftpchead {
 	int argc;
 	uint8_t type;
 	uint8_t code;
+	const char *hostname;
 	char argv[CMD_LENGTH][MAX_CMD];
 	char pwd[DIR_LEN];
 	char *data_to_send;		

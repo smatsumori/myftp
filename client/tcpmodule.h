@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 #include "./myftpc.h"
 
 // TODO: move following defines to utils
@@ -45,6 +46,21 @@ tcpc_init(struct myftpchead *hpr) {
 	if (inet_aton(FTP_SERV_ADDR, &(hpr->servsockaddr.sin_addr)) == 0)
 		report_error_and_exit(ERR_ATON, "tcpc_init");
 	#endif
+
+	#ifndef DEBUG
+		struct addrinfo hints;
+		struct addrinfo *res;
+		fprintf(stderr, "resolving hostname: %s\n", hpr->hostname);
+		int err, sd;
+		memset(&hints, 0, sizeof hints);
+		hints.ai_socktype = SOCK_STREAM;
+		if ((err = getaddrinfo((char *)hpr->hostname, "http", &hints, &res)) < 0) {
+			report_error_and_exit(ERR_GETADDR, "Cannot resolve hostname\n");
+		}
+		if ((connect(hpr->mysockd, res->ai_addr, res->ai_addrlen)) < 0)
+			report_error_and_exit(ERR_CONNECT, "tcpc_connreq");
+	#endif
+
 	#ifdef ANYADDR
 	hpr->servsockaddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	#endif
@@ -56,12 +72,16 @@ void
 tcpc_connreq(struct myftpchead *hpr) {
 	
 	/* send connection request to server */
+	#ifdef DEBUG
 	fprintf(stderr, "Establishing TCP connection with: %s\n",
 			inet_ntoa(hpr->servsockaddr.sin_addr));
 	socklen_t namelen = sizeof(hpr->servsockaddr);
 	if ((connect(hpr->mysockd, (struct sockaddr *)&(hpr->servsockaddr), namelen)) < 0)
 		report_error_and_exit(ERR_CONNECT, "tcpc_connreq");
-		
+	#endif
+	#ifndef DEBUG
+
+	#endif
 	fprintf(stderr, "Established!\n");
 	return;
 }
