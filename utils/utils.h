@@ -21,7 +21,7 @@
 #define CMD_LENGTH 20
 #define MAX_CMD 10
 #define DIR_LEN 100
-#define FTP_SERV_PORT 50030
+#define FTP_SERV_PORT 50044
 #define FTP_SERV_ADDR "131.113.108.53"
 
 /*** ERRORS ***/

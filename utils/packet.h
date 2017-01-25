@@ -3,7 +3,7 @@
 
 /*** DEFINES ***/
 #define FTP_DATASIZE 1024
-#define FTP_MAX_RECVSIZE 8000
+#define FTP_MAX_RECVSIZE 20000
 #define FTP_QUIT 0x01
 #define FTP_PWD 0x02
 #define FTP_CWD 0x03
